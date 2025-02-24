@@ -1,3 +1,9 @@
+## v0.16.1 (2025-02-24)
+
+### Fix
+
+- fix controls_style.css path to relative path in camera_options.py (#98)
+
 ## v0.16.0 (2025-02-24)
 
 ### Feat
