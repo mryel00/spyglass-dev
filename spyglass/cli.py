@@ -12,10 +12,8 @@ from spyglass import camera_options, logger, WEBRTC_ENABLED, set_webrtc_enabled
 from spyglass.exif import option_to_exif_orientation
 from spyglass.__version__ import __version__
 
-
-MAX_WIDTH = 1920
-MAX_HEIGHT = 1920
-
+# Maximum resolution for hardware encoding
+MAX_WIDTH = MAX_HEIGHT = 1920
 
 def main(args=None):
     global WEBRTC_ENABLED
@@ -40,7 +38,9 @@ def main(args=None):
             print('Available controls:\n'+controls_str)
         return
 
-    width, height = split_resolution(parsed_args.resolution)
+    use_sw_jpg_encoding = parsed_args.use_sw_jpg_encoding
+    # Disable max resolution limit for software encoding of JPEG
+    width, height = split_resolution(parsed_args.resolution, check_limit=not use_sw_jpg_encoding)
     controls = parsed_args.controls
     if parsed_args.controls_string:
         controls += [c.split('=') for c in parsed_args.controls_string.split(',')]
@@ -71,7 +71,8 @@ def main(args=None):
                                  parsed_args.stream_url,
                                  parsed_args.snapshot_url,
                                  parsed_args.webrtc_url,
-                                 parsed_args.orientation_exif)
+                                 parsed_args.orientation_exif,
+                                 use_sw_jpg_encoding)
     finally:
         cam.stop()
 
@@ -115,11 +116,11 @@ def parse_autofocus_speed(arg_value):
         raise argparse.ArgumentTypeError("invalid value: normal or fast expected.")
 
 
-def split_resolution(res):
+def split_resolution(res, check_limit=True):
     parts = res.split('x')
     w = int(parts[0])
     h = int(parts[1])
-    if w > MAX_WIDTH or h > MAX_HEIGHT:
+    if check_limit and (w > MAX_WIDTH or h > MAX_HEIGHT):
         raise argparse.ArgumentTypeError("Maximum supported resolution is 1920x1920")
     return w, h
 
@@ -147,9 +148,11 @@ def get_parser():
                         help='Resolution of the images width x height. Maximum is 1920x1920.')
     parser.add_argument('-f', '--fps', type=int, default=15, help='Frames per second to capture')
     parser.add_argument('-st', '--stream_url', type=str, default='/stream',
-                        help='Sets the URL for the mjpeg stream')
+                        help='Sets the URL for the MJPG stream')
     parser.add_argument('-sn', '--snapshot_url', type=str, default='/snapshot',
                         help='Sets the URL for snapshots (single frame of stream)')
+    parser.add_argument('-sw', '--use_sw_jpg_encoding', action='store_true',
+                        help='Use software encoding for JPEG and MJPG (recommended on Pi5)')
     parser.add_argument('-w', '--webrtc_url', type=str, default='/webrtc',
                         help='Sets the URL for the WebRTC stream')
     parser.add_argument('--disable_webrtc', action='store_true',
