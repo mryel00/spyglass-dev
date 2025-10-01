@@ -79,9 +79,12 @@ To be able to use Moonraker update manager, add the following lines to your `moo
 ```conf
 [update_manager spyglass]
 type: git_repo
-channel: beta
 path: ~/spyglass
 origin: https://github.com/mryel00/spyglass.git
+primary_branch: main
+virtualenv: .venv
+requirements: requirements.txt
+system_dependencies: resources/system-dependencies.json
 managed_services: spyglass
 ```
 > Make sure moonraker.asvc contains `spyglass` in the list: `cat ~/printer_data/moonraker.asvc | grep spyglass`.
