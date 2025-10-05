@@ -1,4 +1,4 @@
-name: Release version
+name: Release Spyglass
 
 on:
   workflow_dispatch:
@@ -48,8 +48,8 @@ jobs:
         name: release-body.md
         path: release_body.md
 
-  release:
-    name: Create Release
+  build_wheel:
+    name: Build wheel
     needs: push_to_main
     runs-on: ubuntu-latest
     steps:
@@ -74,17 +74,128 @@ jobs:
       run: |
         python -m build
 
-    - name: Download Release Body
+    - name: Upload wheel
+      uses: actions/upload-artifact@v4
+      with:
+        name: wheel
+        path: ./dist/
+
+  build_deb:
+    name: Build .deb for ${{ matrix.arch }} on Debian ${{ matrix.distro }}
+    needs: build_wheel
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            platform: linux/arm64
+            distro: bullseye
+            continue-on-error: false
+          - arch: arm64
+            platform: linux/arm64
+            distro: bookworm
+            continue-on-error: false
+          - arch: arm64
+            platform: linux/arm64
+            distro: trixie
+            continue-on-error: false
+          - arch: armhf
+            platform: linux/arm/v7
+            distro: bullseye
+            continue-on-error: true
+          - arch: armhf
+            platform: linux/arm/v7
+            distro: bookworm
+            continue-on-error: true
+          - arch: armhf
+            platform: linux/arm/v7
+            distro: trixie
+            continue-on-error: true
+    continue-on-error: ${{ matrix.continue-on-error }}
+
+    env:
+      PKGNAME: spyglass
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: wheel
+          path: .
+
+      - name: Set up QEMU (for running foreign-arch containers)
+        uses: docker/setup-qemu-action@v2
+
+      - name: Build inside Debian container (use repo's build_deb.sh)
+        id: build_in_container
+        run: |
+          WORKDIR="$(pwd)"
+          DISTRO="${{ matrix.distro }}"
+          PLATFORM="${{ matrix.platform }}"
+          ARCH="${{ matrix.arch }}"
+
+          echo "Packaging ${PKGNAME} arch=${ARCH} distro=${DISTRO} platform=${PLATFORM}"
+
+          # Ensure build script is executable in repo
+          chmod +x ./scripts/build_deb.sh
+
+          # Run Debian container (emulated if needed) and call the repository script.
+          # Pass EXTERNAL_REPO as environment variable so the script can install it into the venv.
+          docker run --rm --platform="${PLATFORM}" -v "${WORKDIR}:/work" -w /work \
+            "debian:${DISTRO}-slim" \
+            bash -eux -o pipefail -c "
+              export DEBIAN_FRONTEND=noninteractive
+              apt-get update
+              apt-get install -y --no-install-recommends \
+                git \
+                python3 \
+                python3-venv \
+                python3-pip \
+                python3-av \
+                binutils \
+                ruby-full \
+                curl \
+                wget
+
+              # Install fpm (for Debian packaging)
+              gem install --no-document fpm
+
+              # Run the repository's build script, give it the version argument and EXTERNAL_REPO via env.
+              # The script in the repo has been adapted to look for EXTERNAL_REPO env var and install it into the venv.
+              ./scripts/build_deb.sh '${DISTRO}'
+            "
+
+      - name: Upload deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.distro }}.${{ matrix.arch }}
+          path: ./*.deb
+
+  release:
+    name: Create Release
+    needs: [push_to_main, build_wheel, build_deb]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download all Artifacts
       uses: actions/download-artifact@v4
       with:
-        name: release-body.md
-        path: .
-
+        path: ./dist/
+    - name: Move all artifact files to dist root
+      run: |
+        find ./dist -mindepth 2 -type f -exec mv -t ./dist {} +
+    - name: Move release_body.md
+      run: |
+        mv ./dist/release_body.md .
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
         body_path: release_body.md
         tag_name: ${{ needs.push_to_main.outputs.version }}
-        files: dist/*
+        files: ./dist/*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
