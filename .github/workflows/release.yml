@@ -81,47 +81,23 @@ jobs:
         path: ./dist/
 
   build_deb:
-    name: Build .deb for ${{ matrix.arch }} on Debian ${{ matrix.distro }}
+    name: Build .deb
     needs: build_wheel
     runs-on: ubuntu-latest
+    env:
+      PKGNAME: spyglass
     strategy:
       fail-fast: false
       matrix:
+        arch: [arm64, armhf]
+        distro: [bullseye, bookworm, trixie]
         include:
           - arch: arm64
             platform: linux/arm64
-            distro: bullseye
-            continue-on-error: false
-          - arch: arm64
-            platform: linux/arm64
-            distro: bookworm
-            continue-on-error: false
-          - arch: arm64
-            platform: linux/arm64
-            distro: trixie
-            continue-on-error: false
           - arch: armhf
             platform: linux/arm/v7
-            distro: bullseye
-            continue-on-error: true
-          - arch: armhf
-            platform: linux/arm/v7
-            distro: bookworm
-            continue-on-error: true
-          - arch: armhf
-            platform: linux/arm/v7
-            distro: trixie
-            continue-on-error: true
-    continue-on-error: ${{ matrix.continue-on-error }}
-
-    env:
-      PKGNAME: spyglass
-
+    continue-on-error: ${{ matrix.arch == 'armhf' }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: Download wheel
         uses: actions/download-artifact@v4
         with:
