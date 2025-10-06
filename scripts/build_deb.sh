@@ -32,10 +32,10 @@ rm -rf "${TMP_VENV}/.cache" "${TMP_VENV}/pip-selfcheck.json" "${TMP_VENV}/share"
 echo "Removing pip/wheel from staged venv to reduce size"
 PYVER="$(${TMP_VENV}/bin/python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
 STAGED_SITEPKG="${TMP_VENV}/lib/python${PYVER}/site-packages"
-rm -f "${TMP_VENV}/bin/pip" "${TMP_VENV}/bin/pip3"
-rm -rf "${STAGED_SITEPKG}/pip" "${STAGED_SITEPKG}/pip-*" "${STAGED_SITEPKG}/pip-*dist-info"
-rm -rf "${STAGED_SITEPKG}/wheel" "${STAGED_SITEPKG}/wheel-*" "${STAGED_SITEPKG}/wheel-*dist-info"
-rm -rf "${STAGED_SITEPKG}/setuptools" "${STAGED_SITEPKG}/setuptools-*" "${STAGED_SITEPKG}/setuptools-*dist-info"
+rm -f "${TMP_VENV}/bin/pip" "${TMP_VENV}/bin/pip3" "${TMP_VENV}/bin/pip${PYVER}"
+rm -rf "${STAGED_SITEPKG}/pip" "${STAGED_SITEPKG}"/pip-*
+rm -rf "${STAGED_SITEPKG}/wheel" "${STAGED_SITEPKG}"/wheel-*
+rm -rf "${STAGED_SITEPKG}/setuptools" "${STAGED_SITEPKG}"/setuptools-*
 
 echo "Preparing staging layout at ${STAGING_DIR}"
 mkdir -p "${VENV_DIR}" "${BIN_DIR}"
