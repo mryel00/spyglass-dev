@@ -1,3 +1,16 @@
+## v0.17.1 (2025-10-07)
+
+### Fix
+
+- fix cors issues (#123)
+
+### Dependency Update
+
+- Update aiortc requirement from ~=1.9.0 to ~=1.13.0 (#114)
+- Update setuptools requirement from ~=80.8.0 to ~=80.9.0 (#115)
+- Update setuptools requirement from ~=80.7.1 to ~=80.8.0 (#113)
+- Update setuptools requirement from ~=75.1.0 to ~=80.7.1 (#112)
+
 ## v0.17.0 (2025-05-04)
 
 ### Feat
