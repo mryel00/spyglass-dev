@@ -1,0 +1,108 @@
+on:
+  workflow_call:
+    inputs:
+      branch:
+        type: string
+        default: ''
+jobs:
+  build_wheel:
+    name: Build wheel
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+
+      - name: Build package
+        run: |
+          python -m build
+
+      - name: Upload wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel
+          path: ./dist/
+
+  build_deb:
+    name: Build .deb
+    needs: build_wheel
+    runs-on: ubuntu-latest
+    env:
+      PKGNAME: spyglass
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [arm64, armhf]
+        distro: [bullseye, bookworm, trixie]
+        include:
+          - arch: arm64
+            platform: linux/arm64
+          - arch: armhf
+            platform: linux/arm/v7
+    continue-on-error: ${{ matrix.arch == 'armhf' }}
+    steps:
+      - name: Download wheel
+        uses: actions/download-artifact@v5
+        with:
+          name: wheel
+          path: .
+
+      - name: Set up QEMU (for running foreign-arch containers)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Build inside Debian container (use repo's build_deb.sh)
+        id: build_in_container
+        run: |
+          WORKDIR="$(pwd)"
+          DISTRO="${{ matrix.distro }}"
+          PLATFORM="${{ matrix.platform }}"
+          ARCH="${{ matrix.arch }}"
+
+          echo "Packaging ${PKGNAME} arch=${ARCH} distro=${DISTRO} platform=${PLATFORM}"
+
+          # Ensure build script is executable in repo
+          chmod +x ./scripts/build_deb.sh
+
+          # Run Debian container (emulated if needed) and call the repository script.
+          # Pass EXTERNAL_REPO as environment variable so the script can install it into the venv.
+          docker run --rm --platform="${PLATFORM}" -v "${WORKDIR}:/work" -w /work \
+            "debian:${DISTRO}-slim" \
+            bash -eux -o pipefail -c "
+              export DEBIAN_FRONTEND=noninteractive
+              apt-get update
+              apt-get install -y --no-install-recommends \
+                git \
+                python3 \
+                python3-venv \
+                python3-pip \
+                python3-av \
+                binutils \
+                ruby-full \
+                curl \
+                wget
+
+              # Install fpm (for Debian packaging)
+              gem install --no-document fpm
+
+              # Run the repository's build script, give it the version argument and EXTERNAL_REPO via env.
+              # The script in the repo has been adapted to look for EXTERNAL_REPO env var and install it into the venv.
+              ./scripts/build_deb.sh '${DISTRO}'
+            "
+
+      - name: Upload deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.distro }}.${{ matrix.arch }}
+          path: ./*.deb
