@@ -5,16 +5,16 @@ on:
     branches: [ develop ]
 
 jobs:
-  build:
-    name: build and check
+  check:
+    name: Check syntax and Test
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -23,7 +23,6 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install flake8
-          pip install build
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f requirements-test.txt ]; then pip install -r requirements-test.txt; fi
 
@@ -34,10 +33,10 @@ jobs:
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-      - name: Build package
-        run: |
-          python -m build
-
       - name: Test with pytest
-        run: |
-          pytest
+        run: pytest
+
+  build:
+    name: Build wheel and .deb
+    needs: check
+    uses: ./.github/workflows/build.yml
