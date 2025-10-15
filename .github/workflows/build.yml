@@ -46,7 +46,7 @@ jobs:
   build_deb:
     name: Build .deb
     needs: build_wheel
-    runs-on: ubuntu-latest-arm
+    runs-on: ubuntu-24.04-arm
     env:
       PKGNAME: spyglass
     strategy:
