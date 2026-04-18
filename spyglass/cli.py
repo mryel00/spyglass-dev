@@ -203,6 +203,7 @@ def get_parser():
     )
     parser.add_argument(
         "-st",
+        "--stream-url",
         "--stream_url",
         type=str,
         default="/stream",
@@ -210,6 +211,7 @@ def get_parser():
     )
     parser.add_argument(
         "-sn",
+        "--snapshot-url",
         "--snapshot_url",
         type=str,
         default="/snapshot",
@@ -224,6 +226,7 @@ def get_parser():
     )
     parser.add_argument(
         "-w",
+        "--webrtc-url",
         "--webrtc_url",
         type=str,
         default="/webrtc",
@@ -271,18 +274,21 @@ def get_parser():
     )
     parser.add_argument(
         "-fh",
+        "--flip-horizontal",
         "--flip_horizontal",
         action="store_true",
         help="Mirror the image horizontally (sensor level)",
     )
     parser.add_argument(
         "-fv",
+        "--flip-vertical",
         "--flip_vertical",
         action="store_true",
         help="Mirror the image vertically (sensor level)",
     )
     parser.add_argument(
         "-or",
+        "--orientation-exif",
         "--orientation_exif",
         type=orientation_type,
         default="h",
@@ -318,6 +324,7 @@ def get_parser():
     )
     parser.add_argument(
         "-tf",
+        "--tuning-filter",
         "--tuning_filter",
         type=str,
         default=None,
@@ -327,6 +334,7 @@ def get_parser():
     )
     parser.add_argument(
         "-tfd",
+        "--tuning-filter-dir",
         "--tuning_filter_dir",
         type=str,
         default=None,
@@ -342,6 +350,7 @@ def get_parser():
     camera_group = parser.add_mutually_exclusive_group()
     camera_group.add_argument(
         "-n",
+        "--camera-num",
         "--camera_num",
         type=int,
         default=0,
@@ -349,6 +358,7 @@ def get_parser():
     )
     camera_group.add_argument(
         "-d",
+        "--device-path",
         "--device_path",
         type=str,
         help="Camera device path to be used (Works with --list-controls)",
