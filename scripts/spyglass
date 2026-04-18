@@ -87,22 +87,21 @@ run_spyglass() {
     # ensure default for NO_PROXY
     [[ -n "${NO_PROXY}" ]] || NO_PROXY="true"
 
+    bind_adress="0.0.0.0"
     if [[ "${NO_PROXY}" != "true" ]]; then
         bind_adress="127.0.0.1"
-    else
-        bind_adress="0.0.0.0"
     fi
 
-    if [[ "${USE_SW_JPG_ENCODING:-false}" == "true" ]]; then
-        use_sw_jpg_encoding="--use_sw_jpg_encoding"
-    else
-        use_sw_jpg_encoding=""
+    use_sw_encoding=""
+    # For backwards compatibility, USE_SW_JPG_ENCODING will be checked here
+    # Might get removed in future
+    if [[ "${USE_SW_ENCODING:-false}" == "true" || "${USE_SW_JPG_ENCODING:-false}" == "true" ]]; then
+        use_sw_encoding="--use_sw_encoding"
     fi
 
-    if [[ "${DISABLE_WEBRTC:-false}" == "true" ]]; then
-        disable_webrtc="--disable_webrtc"
-    else
-        disable_webrtc=""
+    force_webrtc=""
+    if [[ "${FORCE_WEBRTC:-false}" == "true" ]]; then
+        force_webrtc="--force_webrtc"
     fi
 
     "${PY_BIN}" "$(dirname "${BASE_SPY_PATH}")/run.py" \
@@ -113,9 +112,9 @@ run_spyglass() {
     --fps "${FPS:-15}" \
     --stream_url "${STREAM_URL:-/stream}" \
     --snapshot_url "${SNAPSHOT_URL:-/snapshot}" \
-    ${use_sw_jpg_encoding} \
+    ${use_sw_encoding} \
     --webrtc_url "${WEBRTC_URL:-/webrtc}" \
-    ${disable_webrtc} \
+    ${force_webrtc} \
     --autofocus "${AUTO_FOCUS:-continuous}" \
     --lensposition "${FOCAL_DIST:-0.0}" \
     --autofocusspeed "${AF_SPEED:-normal}" \
