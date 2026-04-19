@@ -1,3 +1,11 @@
+## v0.18.1 (2026-04-19)
+
+### Fix
+
+- remove exception on too high resolution (#142)
+- fix type hint for camera_num (#141)
+- add alias with hyphen instead of underscore for cli (#140)
+
 ## v0.18.0 (2026-01-20)
 
 ### Feat
