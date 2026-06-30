@@ -1,6 +1,8 @@
 import threading
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 import libcamera
 from picamera2 import Picamera2
@@ -24,13 +26,17 @@ class ServerConfig:
 
 
 class Camera(ABC):
-    def __init__(self, picam2: Picamera2):
+    def __init__(self, picam2: Picamera2) -> None:
         self.picam2 = picam2
         self.media_track = PicameraStreamTrack()
 
     def create_controls(
-        self, fps: int, autofocus: str, lens_position: float, autofocus_speed: str
-    ):
+        self,
+        fps: int,
+        autofocus: libcamera.controls.AfModeEnum,
+        lens_position: float,
+        autofocus_speed: libcamera.controls.AfSpeedEnum,
+    ) -> dict[str, Any]:
         controls = {}
 
         if "FrameDurationLimits" in self.picam2.camera_controls:
@@ -51,21 +57,21 @@ class Camera(ABC):
         width: int,
         height: int,
         fps: int,
-        autofocus: str,
+        autofocus: libcamera.controls.AfModeEnum,
         lens_position: float,
-        autofocus_speed: str,
+        autofocus_speed: libcamera.controls.AfSpeedEnum,
         control_list: list[list[str]] = [],
-        upsidedown=False,
-        flip_horizontal=False,
-        flip_vertical=False,
-    ):
+        upsidedown: bool = False,
+        flip_horizontal: bool = False,
+        flip_vertical: bool = False,
+    ) -> None:
         controls = self.create_controls(fps, autofocus, lens_position, autofocus_speed)
-        c = process_controls(self.picam2, [tuple(ctrl) for ctrl in control_list])
+        c = process_controls(self.picam2, [(ctrl[0], ctrl[1]) for ctrl in control_list])
         controls.update(c)
 
         transform = libcamera.Transform(
-            hflip=int(flip_horizontal or upsidedown),
-            vflip=int(flip_vertical or upsidedown),
+            hflip=flip_horizontal or upsidedown,
+            vflip=flip_vertical or upsidedown,
         )
 
         main_cfg = self._main_stream_config(width, height)
@@ -75,16 +81,16 @@ class Camera(ABC):
             )
         )
 
-    def _main_stream_config(self, width: int, height: int) -> dict:
+    def _main_stream_config(self, width: int, height: int) -> dict[str, Any]:
         """Picamera2 main-stream config dict. Subclasses override to pick the
         most efficient pixel format supported by their camera and encoders."""
         return {"size": (width, height)}
 
     def _run_server(
         self,
-        config,
-        streaming_handler: StreamingHandler,
-        get_frame,
+        config: ServerConfig,
+        streaming_handler: type[StreamingHandler],
+        get_frame: Callable[[StreamingHandler], bytes],
     ):
         logger.info(f"Server listening on {config.bind_address}:{config.port}")
         logger.info(f"Streaming endpoint: {config.stream_url}")
@@ -111,15 +117,15 @@ class Camera(ABC):
     @abstractmethod
     def start_and_run_server(
         self,
-        config,
-        use_sw_encoding=False,
-        mjpeg_linger_seconds=-1,
-        webrtc_linger_seconds=5,
+        config: ServerConfig,
+        use_sw_encoding: bool = False,
+        mjpeg_linger_seconds: float = -1,
+        webrtc_linger_seconds: float = 5,
         mjpg_quality: Quality | None = None,
         h264_quality: Quality | None = None,
-    ):
+    ) -> None:
         pass
 
     @abstractmethod
-    def stop(self):
+    def stop(self) -> None:
         pass

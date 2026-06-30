@@ -16,7 +16,7 @@ from spyglass.camera.camera import ServerConfig
 from spyglass.exif import option_to_exif_orientation
 
 
-def main(args=None):
+def main(args: list[str] | None = None) -> None:
     """Entry point for hello cli.
 
     The setup_py entry_point wraps this in sys.exit already so this effectively
@@ -118,20 +118,20 @@ def main(args=None):
 # region args parsers
 
 
-def resolution_type(arg_value, pat=re.compile(r"^\d+x\d+$")):
+def resolution_type(arg_value: str, pat: re.Pattern[str] = re.compile(r"^\d+x\d+$")) -> str:
     if not pat.match(arg_value):
         raise argparse.ArgumentTypeError("invalid value: <width>x<height> expected.")
     return arg_value
 
 
-def control_type(arg_value: str):
+def control_type(arg_value: str) -> list[str]:
     if "=" in arg_value:
         return arg_value.split("=")
     else:
         raise argparse.ArgumentTypeError(f"invalid control: Missing value: {arg_value}")
 
 
-def orientation_type(arg_value):
+def orientation_type(arg_value: str) -> int:
     if arg_value in option_to_exif_orientation:
         return option_to_exif_orientation[arg_value]
     else:
@@ -140,7 +140,7 @@ def orientation_type(arg_value):
         )
 
 
-def parse_autofocus(arg_value):
+def parse_autofocus(arg_value: str) -> libcamera.controls.AfModeEnum:
     if arg_value == "manual":
         return libcamera.controls.AfModeEnum.Manual
     elif arg_value == "continuous":
@@ -151,7 +151,7 @@ def parse_autofocus(arg_value):
         )
 
 
-def parse_autofocus_speed(arg_value):
+def parse_autofocus_speed(arg_value: str) -> libcamera.controls.AfSpeedEnum:
     if arg_value == "normal":
         return libcamera.controls.AfSpeedEnum.Normal
     elif arg_value == "fast":
@@ -160,7 +160,7 @@ def parse_autofocus_speed(arg_value):
         raise argparse.ArgumentTypeError("invalid value: normal or fast expected.")
 
 
-def split_resolution(res):
+def split_resolution(res: str) -> tuple[int, int]:
     parts = res.split("x")
     w = int(parts[0])
     h = int(parts[1])
@@ -180,12 +180,12 @@ def parse_quality(quality):
 # region cli args
 
 
-def get_args(args):
+def get_args(args: list[str]) -> argparse.Namespace:
     """Parse arguments passed in from shell."""
     return get_parser().parse_args(args)
 
 
-def get_parser():
+def get_parser() -> argparse.ArgumentParser:
     """Return ArgumentParser for hello cli."""
     parser = argparse.ArgumentParser(
         allow_abbrev=True,
