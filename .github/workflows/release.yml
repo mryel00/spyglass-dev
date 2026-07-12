@@ -40,7 +40,7 @@ jobs:
           branchtomerge: main
           branch: develop
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT }}
 
       - name: Upload Release Body
         uses: actions/upload-artifact@v7
