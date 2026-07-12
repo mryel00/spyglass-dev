@@ -1,3 +1,18 @@
+## v0.19.0 (2026-07-12)
+
+### Feat
+
+- add ice servers to WebRTC (#155)
+- add quality parameter for streams (#154)
+- update default streaming endpoint urls (#149)
+- lazy-start picamera2 encoders and camera to save idle CPU (#146)
+
+### Fix
+
+- log missing usb camera functions (#156)
+- fix resolution parsing with upper x (#157)
+- fix Readme to list correct command to list cameras (#150)
+
 ## v0.18.1 (2026-04-19)
 
 ### Fix
