@@ -34,7 +34,7 @@ jobs:
 
   build:
     name: Build wheel and .deb
-    needs: push_to_main
+    needs: prepare_release
     uses: ./.github/workflows/build.yml
     with:
       branch: 'develop'
@@ -61,13 +61,13 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           body_path: release_body.md
-          tag_name: v${{ needs.push_to_main.outputs.version }}
+          tag_name: v${{ needs.prepare_release.outputs.version }}
           files: ./dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   push_to_main:
-    needs: [push_to_main, build]
+    needs: release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout master
